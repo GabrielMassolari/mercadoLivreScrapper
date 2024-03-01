@@ -2,6 +2,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -11,7 +13,6 @@ import utils
 import smtplib
 import pandas as pd
 import os
-import time
 
 
 class MercadoLivreScrapper:
@@ -29,7 +30,7 @@ class MercadoLivreScrapper:
             raise FileNotFoundError(f"{value} file was not found or is not a excel file")
         self.__filename = value
 
-    def read_products_from_xlsx(self):
+    def read_products_from_excel_file(self):
         dataframe = pd.read_excel(utils.get_complete_root_file_path(self.__filename))
 
         if not dataframe.columns == ['Product']:
@@ -37,10 +38,10 @@ class MercadoLivreScrapper:
 
         return dataframe['Product'].to_list()
 
-    def search_info_from_xlsx_products(self):
+    def search_products_info_from_excel(self):
         self.__driver.get("https://www.mercadolivre.com.br/")
         results = []
-        products = self.read_products_from_xlsx()
+        products = self.read_products_from_excel_file()
 
         for product in products:
             nav_search = self.__driver.find_element(By.NAME, "as_word")
@@ -48,7 +49,9 @@ class MercadoLivreScrapper:
             nav_search.send_keys(product)
             nav_search.send_keys(Keys.RETURN)
 
-            time.sleep(2)
+            WebDriverWait(self.__driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, 'andes-money-amount__fraction'))
+            )
 
             price = int(self.__driver.find_element(By.CLASS_NAME, 'andes-money-amount__fraction').text.replace(".", ""))
 
@@ -58,14 +61,13 @@ class MercadoLivreScrapper:
 
         return results
 
-    def save_products_info_in_xlsx(self, products_info):
+    def save_products_info_in_excel(self, products_info):
         dataframe = pd.DataFrame(products_info)
         dataframe.loc['Total'] = dataframe.sum(numeric_only=True)
-        print(dataframe)
 
         dataframe.to_excel(self.__filename, index=False)
 
-    def send_email_with_excel_atachment(self):
+    def send_email_with_excel_attachment(self):
         load_dotenv()
 
         sender_email = os.getenv("SENDER_EMAIL")
@@ -98,6 +100,6 @@ class MercadoLivreScrapper:
             server.sendmail(sender_email, recipient_email, message.as_string())
 
     def fill_spreadsheet_products_info_and_send_it_by_email(self):
-        products_info = self.search_info_from_xlsx_products()
-        self.save_products_info_in_xlsx(products_info)
-        self.send_email_with_excel_atachment()
+        products_info = self.search_products_info_from_excel()
+        self.save_products_info_in_excel(products_info)
+        self.send_email_with_excel_attachment()
