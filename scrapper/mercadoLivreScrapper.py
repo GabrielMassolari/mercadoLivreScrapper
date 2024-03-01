@@ -2,6 +2,12 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from dotenv import load_dotenv
+import smtplib
 import pandas as pd
 import os
 import time
@@ -31,7 +37,7 @@ class MercadoLivreScrapper:
 
         return dataframe['Product'].to_list()
 
-    def search_items_from_products_list(self):
+    def search_info_from_xlsx_products(self):
         self.__driver.get("https://www.mercadolivre.com.br/")
         results = []
         products = self.read_products_from_xlsx()
@@ -44,11 +50,54 @@ class MercadoLivreScrapper:
 
             time.sleep(2)
 
-            price = self.__driver.find_element(By.CLASS_NAME, 'andes-money-amount__fraction').text
-            print(price)
+            price = int(self.__driver.find_element(By.CLASS_NAME, 'andes-money-amount__fraction').text.replace(".", ""))
 
             results.append({'Product': product, 'Price': price})
 
-        print(results)
-
         self.__driver.close()
+
+        return results
+
+    def save_products_info_in_xlsx(self, products_info):
+        dataframe = pd.DataFrame(products_info)
+        dataframe.loc['Total'] = dataframe.sum(numeric_only=True)
+        print(dataframe)
+
+        dataframe.to_excel(self.__filename, index=False)
+
+    def send_email_with_excel_atachment(self):
+        load_dotenv()
+
+        sender_email = os.getenv("SENDER_EMAIL")
+        sender_password = os.getenv("GMAIL_PASSWORD")
+        recipient_email = os.getenv("SENDER_EMAIL")
+        subject = "Tabela Mercado Livre"
+        body = "Segue em anexo a planilha de preços dos produtos do mercado livre"
+
+        with open(f"C:\Programação\Python\mercadoLivreScrapper\{self.__filename}", "rb") as attachment:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(attachment.read())
+
+        encoders.encode_base64(part)
+        part.add_header(
+            "Content-Disposition",
+            f"attachment; filename= {self.__filename}",
+        )
+
+        message = MIMEMultipart()
+        message['Subject'] = subject
+        message['From'] = sender_email
+        message['To'] = recipient_email
+
+        html_part = MIMEText(body)
+        message.attach(html_part)
+        message.attach(part)
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, recipient_email, message.as_string())
+
+    def fill_spreadsheet_products_info_and_send_it_by_email(self):
+        products_info = self.search_info_from_xlsx_products()
+        self.save_products_info_in_xlsx(products_info)
+        self.send_email_with_excel_atachment()
