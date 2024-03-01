@@ -7,6 +7,7 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
+import utils
 import smtplib
 import pandas as pd
 import os
@@ -15,7 +16,7 @@ import time
 
 class MercadoLivreScrapper:
     def __init__(self, filename):
-        service = Service(executable_path='C:\Programação\Python\mercadoLivreScrapper\chromedriver.exe')
+        service = Service(executable_path=utils.get_complete_root_file_path('chromedriver.exe'))
         self.__driver = webdriver.Chrome(service=service)
         self.__filename = ''
         self.set_filename(filename)
@@ -29,8 +30,7 @@ class MercadoLivreScrapper:
         self.__filename = value
 
     def read_products_from_xlsx(self):
-        print(self.__filename)
-        dataframe = pd.read_excel(f"C:\Programação\Python\mercadoLivreScrapper\{self.__filename}")
+        dataframe = pd.read_excel(utils.get_complete_root_file_path(self.__filename))
 
         if not dataframe.columns == ['Product']:
             raise Exception(f"{self.__filename} is not in pattern (Need has only 'Product' column)")
@@ -74,14 +74,14 @@ class MercadoLivreScrapper:
         subject = "Tabela Mercado Livre"
         body = "Segue em anexo a planilha de preços dos produtos do mercado livre"
 
-        with open(f"C:\Programação\Python\mercadoLivreScrapper\{self.__filename}", "rb") as attachment:
+        with open(utils.get_complete_root_file_path(self.__filename), "rb") as attachment:
             part = MIMEBase("application", "octet-stream")
             part.set_payload(attachment.read())
 
         encoders.encode_base64(part)
         part.add_header(
             "Content-Disposition",
-            f"attachment; filename= {self.__filename}",
+            f"attachment; filename={self.__filename}",
         )
 
         message = MIMEMultipart()
