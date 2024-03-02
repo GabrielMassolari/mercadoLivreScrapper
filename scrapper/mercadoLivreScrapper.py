@@ -38,7 +38,7 @@ class MercadoLivreScrapper:
 
         return dataframe['Product'].to_list()
 
-    def search_products_info_from_excel(self):
+    def search_products_info_from_excel(self, average_price_flag=False):
         self.__driver.get("https://www.mercadolivre.com.br/")
         results = []
         products = self.read_products_from_excel_file()
@@ -53,9 +53,19 @@ class MercadoLivreScrapper:
                 EC.presence_of_element_located((By.CLASS_NAME, 'andes-money-amount__fraction'))
             )
 
-            price = int(self.__driver.find_element(By.CLASS_NAME, 'andes-money-amount__fraction').text.replace(".", ""))
+            if average_price_flag:
+                prices = self.__driver.find_elements(By.CSS_SELECTOR,
+                                                     'span.ui-search-price__part--medium .andes-money-amount__fraction')
+                prices = [int(element.text.replace(".", "")) for element in prices[:10]]
+                print(prices)
+                average_price = sum(prices) / len(prices)
 
-            results.append({'Product': product, 'Price': price})
+                results.append({'Product': product, 'AvgPrice': average_price})
+            else:
+                price = int(self.__driver.find_element(By.CSS_SELECTOR, 'span.ui-search-price__part--medium .andes-money-amount__fraction')
+                            .text.replace(".", ""))
+
+                results.append({'Product': product, 'Price': price})
 
         self.__driver.close()
 
@@ -99,7 +109,7 @@ class MercadoLivreScrapper:
             server.login(sender_email, sender_password)
             server.sendmail(sender_email, recipient_email, message.as_string())
 
-    def fill_spreadsheet_products_info_and_send_it_by_email(self):
-        products_info = self.search_products_info_from_excel()
+    def fill_spreadsheet_products_info_and_send_it_by_email(self, average_price_flag=False):
+        products_info = self.search_products_info_from_excel(average_price_flag)
         self.save_products_info_in_excel(products_info)
         self.send_email_with_excel_attachment()
