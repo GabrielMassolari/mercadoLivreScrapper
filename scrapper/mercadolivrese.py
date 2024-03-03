@@ -15,7 +15,7 @@ import pandas as pd
 import os
 
 
-class MercadoLivreScrapper:
+class MercadoLivreSe:
     def __init__(self, filename):
         service = Service(executable_path=utils.get_complete_root_file_path('chromedriver.exe'))
         self.__driver = webdriver.Chrome(service=service)
@@ -33,7 +33,7 @@ class MercadoLivreScrapper:
     def read_products_from_excel_file(self):
         dataframe = pd.read_excel(utils.get_complete_root_file_path(self.__filename))
 
-        if not dataframe.columns == ['Product']:
+        if not list(dataframe.columns) == ['Product']:
             raise Exception(f"{self.__filename} is not in pattern (Need has only 'Product' column)")
 
         return dataframe['Product'].to_list()
