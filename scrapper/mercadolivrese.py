@@ -38,7 +38,7 @@ class MercadoLivreSe:
 
         return dataframe['Product'].to_list()
 
-    def search_products_info_from_excel(self, average_price_flag=False):
+    def search_products_info_in_mercado_livre(self, average_price_flag=False):
         self.__driver.get("https://www.mercadolivre.com.br/")
         results = []
         products = self.read_products_from_excel_file()
@@ -110,6 +110,6 @@ class MercadoLivreSe:
             server.sendmail(sender_email, recipient_email, message.as_string())
 
     def fill_spreadsheet_products_info_and_send_it_by_email(self, average_price_flag=False):
-        products_info = self.search_products_info_from_excel(average_price_flag)
+        products_info = self.search_products_info_in_mercado_livre(average_price_flag)
         self.save_products_info_in_excel(products_info)
         self.send_email_with_excel_attachment()
