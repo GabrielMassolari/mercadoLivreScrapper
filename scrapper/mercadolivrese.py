@@ -4,6 +4,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -50,8 +51,14 @@ class MercadoLivreSe:
             nav_search.send_keys(Keys.RETURN)
 
             WebDriverWait(self.__driver, 10).until(
-                EC.presence_of_element_located((By.CLASS_NAME, 'andes-money-amount__fraction'))
+                EC.presence_of_element_located((By.NAME, "as_word"))
             )
+
+            try:
+                element = self.__driver.find_element(By.CSS_SELECTOR, 'span.ui-search-price__part--medium .andes-money-amount__fraction')
+            except NoSuchElementException:
+                results.append({'Product': f'{product} | PRODUTO NAO ENCONTRADO', 'Price': None})
+                continue
 
             if average_price_flag:
                 prices = self.__driver.find_elements(By.CSS_SELECTOR,

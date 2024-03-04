@@ -49,6 +49,13 @@ class MercadoLivreBS4:
             page = requests.get(complete_url, params)
             soup = BeautifulSoup(page.text, 'html.parser')
 
+            price_elm = soup.select_one('span.ui-search-price__part--medium .andes-money-amount__fraction')
+            print(price_elm)
+
+            if not price_elm:
+                results.append({'Product': f'{product} | PRODUTO NAO ENCONTRADO', 'Price': None})
+                continue
+
             if average_price_flag:
                 prices = soup.select('span.ui-search-price__part--medium .andes-money-amount__fraction')
                 prices = [int(element.text.replace(".", "")) for element in prices[:10]]
@@ -57,7 +64,7 @@ class MercadoLivreBS4:
 
                 results.append({'Product': product, 'AvgPrice': average_price})
             else:
-                price = soup.select_one('span.ui-search-price__part--medium .andes-money-amount__fraction').text.replace(".", "")
+                price = int(soup.select_one('span.ui-search-price__part--medium .andes-money-amount__fraction').text.replace(".", ""))
 
                 results.append({'Product': product, 'Price': price})
 
