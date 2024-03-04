@@ -62,7 +62,7 @@ class MercadoLivreSe:
             try:
                 element = self.__driver.find_element(By.CSS_SELECTOR, 'span.ui-search-price__part--medium .andes-money-amount__fraction')
             except NoSuchElementException:
-                results.append({'Product': f'{product} | PRODUTO NAO ENCONTRADO', 'Price': None})
+                results.append({'Product': f'{product} | PRODUCT NOT FOUND', 'Price': None})
                 continue
 
             if average_price_flag:

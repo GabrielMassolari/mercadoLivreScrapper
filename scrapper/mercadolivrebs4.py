@@ -57,7 +57,7 @@ class MercadoLivreBS4:
             price_element = soup.select_one('span.ui-search-price__part--medium .andes-money-amount__fraction')
 
             if not price_element:
-                results.append({'Product': f'{product} | PRODUTO NAO ENCONTRADO', 'Price': None})
+                results.append({'Product': f'{product} | PRODUCT NOT FOUND', 'Price': None})
                 continue
 
             if average_price_flag:
